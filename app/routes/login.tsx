@@ -2,7 +2,7 @@ import { Form, useActionData, useNavigation } from "@remix-run/react";
 
 export default function Login() {
   const actionData = useActionData<{ error?: string }>();
-  const transition = useNavigation();
+  const navigation = useNavigation();
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -10,11 +10,17 @@ export default function Login() {
         <h1 className="text-2xl font-semibold text-center text-gray-800 dark:text-gray-200">
           Login to Your Account
         </h1>
+
+        {/* Display error messages */}
         {actionData?.error && (
-          <div className="p-3 text-sm text-red-600 bg-red-100 rounded-md dark:bg-red-800 dark:text-red-200">
+          <div
+            className="p-3 text-sm text-red-600 bg-red-100 rounded-md dark:bg-red-800 dark:text-red-200"
+            role="alert"
+          >
             {actionData.error}
           </div>
         )}
+
         <Form method="post" action="/api/login" className="space-y-4">
           <div>
             <label
@@ -48,12 +54,12 @@ export default function Login() {
           </div>
           <button
             type="submit"
-            disabled={transition.state === "submitting"}
             className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:bg-blue-500 dark:hover:bg-blue-600"
           >
-            {transition.state === "submitting" ? "Logging in..." : "Login"}
+            Login
           </button>
         </Form>
+
       </div>
     </div>
   );
