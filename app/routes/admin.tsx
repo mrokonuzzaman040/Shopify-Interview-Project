@@ -1,72 +1,109 @@
-import { LoaderFunction, redirect, json } from "@remix-run/node";
+import { LoaderFunction, json, redirect } from "@remix-run/node";
 import { useLoaderData, Link } from "@remix-run/react";
 import { PrismaClient } from "@prisma/client";
-import { sessionStorage } from "~/session";
-import { checkRole } from "~/utils/roleChecker"; // Utility to check user roles
+import { checkRole } from "~/utils/roleChecker";
+import { StatCard } from "~/components/StatCard";
+import { SectionCard } from "~/components/SectionCard";
+import { ListItem } from "~/components/ListItem";
 
 const prisma = new PrismaClient();
 
-// Loader to check authentication and role
+// Loader Function to fetch data for Admin Dashboard
 export const loader: LoaderFunction = async ({ request }) => {
-  try {
-    // Check if the user has the "admin" role
-    await checkRole(request, ["admin"]);
+    try {
+        await checkRole(request, ["admin"]);
 
-    // Fetch all users (example of admin-specific data)
-    const users = await prisma.user.findMany({
-      select: { id: true, username: true, email: true, role: true, createdAt: true },
-    });
+        const totalUsers = await prisma.user.count();
+        const totalAdmins = await prisma.user.count({ where: { role: "admin" } });
+        const totalRoles = await prisma.role.count();
 
-    return json({ users });
-  } catch (error: any) {
-    console.error("Access Denied:", error);
-    return redirect("/login?message=unauthorized");
-  }
+        const recentUsers = await prisma.user.findMany({
+            take: 5,
+            orderBy: { createdAt: "desc" },
+            select: { id: true, username: true, email: true, role: true },
+        });
+
+        const recentAdmins = await prisma.user.findMany({
+            where: { role: "admin" },
+            take: 5,
+            orderBy: { createdAt: "desc" },
+            select: { id: true, username: true, email: true },
+        });
+
+        return json({ totalUsers, totalAdmins, totalRoles, recentUsers, recentAdmins });
+    } catch (error) {
+        console.error("Access Denied:", error);
+        return redirect("/login?message=unauthorized");
+    }
 };
 
-// Admin Component
 export default function AdminDashboard() {
-  const { users } = useLoaderData<{ users: { id: string; username: string; email: string; role: string; createdAt: string }[] }>();
+    const { totalUsers, totalAdmins, totalRoles, recentUsers, recentAdmins } = useLoaderData<{
+        totalUsers: number;
+        totalAdmins: number;
+        totalRoles: number;
+        recentUsers: { id: string; username: string; email: string; role: string }[];
+        recentAdmins: { id: string; username: string; email: string }[];
+    }>();
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
-      <div className="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-4 text-center">
-          Admin Dashboard
-        </h1>
+    return (
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+                <h1 className="text-4xl font-bold text-center text-gray-800 dark:text-gray-200">Admin Dashboard</h1>
 
-        {/* User Table */}
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700">
-              <th className="p-3">Username</th>
-              <th className="p-3">Email</th>
-              <th className="p-3">Role</th>
-              <th className="p-3">Created At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="p-3">{user.username}</td>
-                <td className="p-3">{user.email}</td>
-                <td className="p-3">{user.role}</td>
-                <td className="p-3">{new Date(user.createdAt).toLocaleDateString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                {/* Stats Cards */}
+                <div className="flex items-center justify-center gap-4 p-6">
+                    <StatCard title="Total Users" count={totalUsers} color="blue" />
+                    <StatCard title="Total Admins" count={totalAdmins} color="green" />
+                    <StatCard title="Total Roles" count={totalRoles} color="yellow" />
+                </div>
 
-        {/* Back to Dashboard */}
-        <div className="text-center mt-6">
-          <Link
-            to="/dashboard"
-            className="text-blue-600 hover:underline dark:text-blue-400"
-          >
-            Back to Dashboard
-          </Link>
+                <div className="flex flex-col gap-6">
+                    {/* Recent Users */}
+                    <SectionCard title="Recent Users">
+                        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {recentUsers.map((user) => (
+                                <ListItem
+                                    key={user.id}
+                                    title={user.username}
+                                    subtitle={`${user.email} - ${user.role}`}
+                                    link={`/users/${user.id}`}
+                                />
+                            ))}
+                        </ul>
+                    </SectionCard>
+
+                    {/* Recent Admins */}
+                    <SectionCard title="Recent Admins">
+                        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {recentAdmins.map((admin) => (
+                                <ListItem
+                                    key={admin.id}
+                                    title={admin.username}
+                                    subtitle={admin.email}
+                                    link={`/users/${admin.id}`}
+                                />
+                            ))}
+                        </ul>
+                    </SectionCard>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                    <Link
+                        to="/roles/add"
+                        className="flex-1 text-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700"
+                    >
+                        Add New Role
+                    </Link>
+                    <Link
+                        to="/users"
+                        className="flex-1 text-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
+                    >
+                        View All Users
+                    </Link>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
