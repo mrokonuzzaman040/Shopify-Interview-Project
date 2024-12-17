@@ -16,7 +16,15 @@ export async function checkRole(request: Request, allowedRoles: string[]) {
     select: { role: true },
   });
 
-  if (!user || !allowedRoles.includes(user.role)) {
+  if (!user) {
+    throw new Response("User not found", { status: 404 });
+  }
+
+  // Normalize roles to lowercase for comparison
+  const userRole = user.role.toLowerCase();
+  const normalizedAllowedRoles = allowedRoles.map((role) => role.toLowerCase());
+
+  if (!normalizedAllowedRoles.includes(userRole)) {
     throw new Response("Forbidden", { status: 403 });
   }
 

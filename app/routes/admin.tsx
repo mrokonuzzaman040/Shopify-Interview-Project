@@ -33,7 +33,7 @@ export const loader: LoaderFunction = async ({ request }) => {
         return json({ totalUsers, totalAdmins, totalRoles, recentUsers, recentAdmins });
     } catch (error) {
         console.error("Access Denied:", error);
-        return redirect("/login?message=unauthorized");
+        return redirect("/logout");
     }
 };
 
@@ -91,16 +91,22 @@ export default function AdminDashboard() {
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                     <Link
-                        to="/roles/add"
+                        to="/roles"
                         className="flex-1 text-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700"
                     >
-                        Add New Role
+                        Roles
                     </Link>
                     <Link
                         to="/users"
                         className="flex-1 text-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
                     >
                         View All Users
+                    </Link>
+                    <Link
+                        to="/dashboard"
+                        className="flex-1 text-center px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600"
+                    >
+                        Back to Dashboard
                     </Link>
                 </div>
             </div>
