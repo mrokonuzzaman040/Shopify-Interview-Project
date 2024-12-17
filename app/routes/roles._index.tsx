@@ -1,5 +1,5 @@
 import { LoaderFunction, ActionFunction, json, redirect } from "@remix-run/node";
-import { useLoaderData, Form, useNavigation, useActionData } from "@remix-run/react";
+import { useLoaderData, Form, useNavigation, useActionData, Link } from "@remix-run/react";
 import { prisma } from "~/utils/prisma.server";
 import { checkRole } from "~/utils/roleChecker";
 import { useState } from "react";
@@ -183,6 +183,9 @@ export default function RoleIndex() {
                             {isSubmitting ? "Adding..." : "Add Role"}
                         </button>
                     </Form>
+                </div>
+                <div className="text-center mt-6">
+                    <Link to="/admin" className="text-blue-600 hover:underline">Back to Dashboard</Link>
                 </div>
             </div>
         </div>
